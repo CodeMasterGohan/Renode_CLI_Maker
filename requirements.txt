@@ -1,0 +1,19 @@
+# Core LLM and Database Dependencies
+ollama>=0.1.0
+openai>=1.0.0
+pymilvus>=2.3.0
+
+# CLI and Utilities
+colorama>=0.4.0
+PyYAML>=6.0
+
+# Enhanced Features (optional but recommended)
+tenacity>=8.0.0
+structlog>=23.0.0
+
+# Development Dependencies (optional)
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0 
