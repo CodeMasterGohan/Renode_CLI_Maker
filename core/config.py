@@ -5,7 +5,7 @@ Configuration management for the Renode Peripheral Generator CLI.
 import os
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
 
 try:
@@ -45,7 +45,9 @@ class MilvusConfig:
         if self.collections is None:
             self.collections = {
                 "manual": "pacer_documents",
-                "examples": "pacer_renode_peripheral_examples"
+                "examples": "pacer_renode_peripheral_examples",
+                "rf_examples": "robotframework_test_examples",
+                "rf_docs": "robotframework_documentation"
             }
 
 
@@ -67,6 +69,23 @@ class LoggingConfig:
 
 
 @dataclass
+class RobotFrameworkConfig:
+    """Configuration for RobotFramework test generation."""
+    enabled: bool = True
+    test_levels: List[str] = None
+    output_format: str = "robot"
+    include_setup: bool = True
+    include_teardown: bool = True
+    keyword_library: str = "ReNodeKeywords"
+    output_dir: str = "tests"
+    suite_name: str = "ReNodePeripheralTests"
+    
+    def __post_init__(self):
+        if self.test_levels is None:
+            self.test_levels = ["integration"]
+
+
+@dataclass
 class AppConfig:
     """Main application configuration."""
     llm: LLMConfig
@@ -74,13 +93,17 @@ class AppConfig:
     milvus: MilvusConfig
     cache: CacheConfig
     logging: LoggingConfig
+    robotframework: RobotFrameworkConfig
+    mode: str = "peripheral"  # "peripheral", "robotframework", or "both"
     
     def __init__(self, **kwargs):
+        self.mode = kwargs.get('mode', 'peripheral')
         self.llm = LLMConfig(**kwargs.get('llm', {}))
         self.embedding = EmbeddingConfig(**kwargs.get('embedding', {}))
         self.milvus = MilvusConfig(**kwargs.get('milvus', {}))
         self.cache = CacheConfig(**kwargs.get('cache', {}))
         self.logging = LoggingConfig(**kwargs.get('logging', {}))
+        self.robotframework = RobotFrameworkConfig(**kwargs.get('robotframework', {}))
 
 
 class ConfigManager:
@@ -208,6 +231,16 @@ class ConfigManager:
         if os.getenv('RENODE_CACHE_DIR'):
             config.setdefault('cache', {})['directory'] = os.getenv('RENODE_CACHE_DIR')
             
+        # RobotFramework configuration
+        if os.getenv('RENODE_RF_ENABLED'):
+            config.setdefault('robotframework', {})['enabled'] = os.getenv('RENODE_RF_ENABLED').lower() == 'true'
+        if os.getenv('RENODE_RF_OUTPUT_DIR'):
+            config.setdefault('robotframework', {})['output_dir'] = os.getenv('RENODE_RF_OUTPUT_DIR')
+        
+        # Mode configuration
+        if os.getenv('RENODE_MODE'):
+            config['mode'] = os.getenv('RENODE_MODE')
+            
         return config
     
     def _extract_cli_config(self, cli_args: Dict[str, Any]) -> Dict[str, Any]:
@@ -250,6 +283,19 @@ class ConfigManager:
             logging_config['level'] = 'WARNING'
         if logging_config:
             config['logging'] = logging_config
+            
+        # Mode configuration
+        if cli_args.get('mode'):
+            config['mode'] = cli_args['mode']
+            
+        # RobotFramework configuration
+        rf_config = {}
+        if cli_args.get('rf_test_level'):
+            rf_config['test_levels'] = [cli_args['rf_test_level']] if cli_args['rf_test_level'] != 'all' else ['unit', 'integration', 'system']
+        if cli_args.get('rf_output_dir'):
+            rf_config['output_dir'] = cli_args['rf_output_dir']
+        if rf_config:
+            config['robotframework'] = rf_config
             
         return config
     

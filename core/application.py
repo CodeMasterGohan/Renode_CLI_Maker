@@ -52,6 +52,16 @@ class RenodeGeneratorCLI:
             max_iterations=3  # Default, can be overridden
         )
         
+        # Initialize RF generator if RF mode is enabled
+        self.rf_generator = None
+        if self.config.robotframework.enabled or self.config.mode in ['robotframework', 'both']:
+            try:
+                from rf_core.rf_application import RFGeneratorCLI
+                self.rf_generator = RFGeneratorCLI(config, status_reporter)
+                self.status_reporter.verbose("RobotFramework generator initialized")
+            except ImportError as e:
+                self.status_reporter.warning(f"RobotFramework support not available: {e}")
+        
     def _initialize_clients(self):
         """Initialize LLM and Milvus clients."""
         try:
@@ -86,46 +96,48 @@ class RenodeGeneratorCLI:
             raise RenodeGeneratorError(error_msg) from e
     
     def run(self, prompt: str, max_iterations: int = 3, use_cache: bool = True, 
-            save_plan: Optional[str] = None) -> str:
+            save_plan: Optional[str] = None, mode: str = None, 
+            rf_test_level: str = None, rf_output_dir: str = None) -> Dict[str, Any]:
         """Run the peripheral generation process."""
         
+        # Determine mode
+        generation_mode = mode or self.config.mode
+        
         self.status_reporter.verbose(f"Starting generation with prompt: {prompt}")
+        self.status_reporter.verbose(f"Generation mode: {generation_mode}")
         self.status_reporter.verbose(f"Max iterations: {max_iterations}")
         self.status_reporter.verbose(f"Cache enabled: {use_cache and self.config.cache.enabled}")
         
         try:
-            # Update routing agent configuration
-            self.routing_agent.max_iterations = max_iterations
+            result = {'mode': generation_mode}
             
-            # Create task for the routing agent
-            task = {
-                'prompt': prompt,
-                'use_cache': use_cache and self.config.cache.enabled
-            }
+            if generation_mode in ['peripheral', 'both']:
+                # Generate peripheral code
+                peripheral_result = self._run_peripheral_generation(
+                    prompt, max_iterations, use_cache, save_plan
+                )
+                result['peripheral_code'] = peripheral_result
             
-            # Save execution plan if requested
-            if save_plan:
-                self._save_plan(task, save_plan)
-            
-            # Run the generation process
-            self.status_reporter.status_update("Executing generation pipeline...")
-            
-            # Use asyncio to run the async agent
-            result = asyncio.run(self._run_generation(task))
+            if generation_mode in ['robotframework', 'both']:
+                # Generate RobotFramework tests
+                if not self.rf_generator:
+                    raise RenodeGeneratorError("RobotFramework generator not available")
+                
+                rf_result = self.rf_generator.run(
+                    prompt=prompt,
+                    test_level=rf_test_level,
+                    max_iterations=max_iterations,
+                    use_cache=use_cache,
+                    output_dir=rf_output_dir
+                )
+                result['rf_tests'] = rf_result
             
             # Update metrics
             self.metrics['end_time'] = time.time()
-            self.metrics['iterations'] = self.routing_agent.current_iteration
-            
-            # Update cache metrics if available
-            if self.cache:
-                cache_stats = self.cache.get_stats()
-                # Note: These would need to be tracked in the cache implementation
-                # self.metrics['cache_hits'] = cache_stats.get('hits', 0)
-                # self.metrics['cache_misses'] = cache_stats.get('misses', 0)
+            self.metrics['mode'] = generation_mode
             
             self.status_reporter.newline()
-            self.status_reporter.success("Generation completed successfully!")
+            self.status_reporter.success(f"Generation completed successfully! Mode: {generation_mode}")
             
             return result
             
@@ -135,6 +147,34 @@ class RenodeGeneratorCLI:
             self.metrics['errors'].append(error_msg)
             self.status_reporter.error(error_msg)
             raise RenodeGeneratorError(error_msg) from e
+    
+    def _run_peripheral_generation(self, prompt: str, max_iterations: int, 
+                                 use_cache: bool, save_plan: Optional[str]) -> str:
+        """Run peripheral code generation."""
+        
+        # Update routing agent configuration
+        self.routing_agent.max_iterations = max_iterations
+        
+        # Create task for the routing agent
+        task = {
+            'prompt': prompt,
+            'use_cache': use_cache and self.config.cache.enabled
+        }
+        
+        # Save execution plan if requested
+        if save_plan:
+            self._save_plan(task, save_plan)
+        
+        # Run the generation process
+        self.status_reporter.status_update("Executing peripheral generation pipeline...")
+        
+        # Use asyncio to run the async agent
+        result = asyncio.run(self._run_generation(task))
+        
+        # Update metrics
+        self.metrics['iterations'] = self.routing_agent.current_iteration
+        
+        return result
     
     async def _run_generation(self, task: Dict[str, Any]) -> str:
         """Run the actual generation process asynchronously."""

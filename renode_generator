@@ -157,6 +157,29 @@ https://github.com/renode/renode-peripheral-generator
             help='Milvus database URI (overrides config file)'
         )
 
+        # Mode and RobotFramework options
+        mode_group = parser.add_argument_group('Generation Mode')
+        mode_group.add_argument(
+            '--mode',
+            choices=['peripheral', 'robotframework', 'both'],
+            default='peripheral',
+            help='Generation mode: peripheral (C# code), robotframework (RF tests), or both (default: %(default)s)'
+        )
+
+        # RobotFramework-specific options
+        rf_group = parser.add_argument_group('RobotFramework Options')
+        rf_group.add_argument(
+            '--rf-test-level',
+            choices=['unit', 'integration', 'system', 'all'],
+            default='integration',
+            help='RobotFramework test level to generate (default: %(default)s)'
+        )
+        rf_group.add_argument(
+            '--rf-output-dir',
+            type=str,
+            help='Output directory for RobotFramework tests'
+        )
+
         # Execution control
         execution_group = parser.add_argument_group('Execution Control')
         execution_group.add_argument(
@@ -220,6 +243,11 @@ https://github.com/renode/renode-peripheral-generator
                 "renode-generator \"Create a basic GPIO controller\"",
                 "renode-generator \"Create a UART with interrupt support\"",
                 "renode-generator \"Create an I2C master controller\""
+            ]),
+            ("RobotFramework Test Generation", [
+                "renode-generator \"UART peripheral\" --mode robotframework",
+                "renode-generator \"SPI controller\" --mode robotframework --rf-test-level unit",
+                "renode-generator \"GPIO controller\" --mode both --rf-output-dir ./tests"
             ]),
             ("Output Control", [
                 "renode-generator \"Create a timer\" -o timer.cs",
@@ -360,7 +388,10 @@ https://github.com/renode/renode-peripheral-generator
                     prompt=args.prompt,
                     max_iterations=args.iterations,
                     use_cache=not args.no_cache,
-                    save_plan=args.save_plan
+                    save_plan=args.save_plan,
+                    mode=args.mode,
+                    rf_test_level=args.rf_test_level,
+                    rf_output_dir=args.rf_output_dir
                 )
             
             # Format and output result
