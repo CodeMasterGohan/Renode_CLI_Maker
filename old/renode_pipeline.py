@@ -817,13 +817,13 @@ class Pipeline:
             "model_name": os.getenv("MODEL_NAME", "llama3"),
             "openai_api_key": os.getenv("OPENAI_API_KEY"),
             "openai_base_url": os.getenv("OPENAI_BASE_URL"),
-            "ollama_host": os.getenv("OLLAMA_HOST", "http://ollama:11434"),
+            "ollama_host": os.getenv("OLLAMA_HOST", "http://dso-wp-kasm2.sern.mil:11434"),
             
             # Embedding Configuration
             "embedding_provider": os.getenv("EMBEDDING_PROVIDER", "ollama"),
             "embedding_model_name": os.getenv("EMBEDDING_MODEL_NAME", "nomic-embed-text"),
             "embedding_api_key": os.getenv("EMBEDDING_API_KEY"),
-            "embedding_base_url": os.getenv("EMBEDDING_BASE_URL", "http://ollama:11434"),
+            "embedding_base_url": os.getenv("EMBEDDING_BASE_URL", "http://dso-wp-kasm2.sern.mil:11434"),
             
             # Database Configuration
             "milvus_uri": os.getenv("MILVUS_URI", "milvus:19530"),

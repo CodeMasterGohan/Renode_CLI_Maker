@@ -11,7 +11,7 @@ class StatusReporter:
     """Handles console output with colors and formatting."""
     
     def __init__(self):
-        self.verbose = False
+        self.is_verbose = False
         self.quiet = False
         self.debug = False
         
@@ -55,7 +55,7 @@ class StatusReporter:
     
     def setup(self, verbose: bool = False, quiet: bool = False, debug: bool = False):
         """Configure the status reporter."""
-        self.verbose = verbose
+        self.is_verbose = verbose
         self.quiet = quiet
         self.debug = debug
         
@@ -95,7 +95,7 @@ class StatusReporter:
     
     def verbose(self, message: str):
         """Display a verbose message."""
-        if self.verbose and not self.quiet:
+        if self.is_verbose and not self.quiet:
             prefix = self._colorize("📝", "cyan")
             print(f"{prefix} {message}")
     
@@ -119,7 +119,7 @@ class StatusReporter:
     def status_update(self, message: str):
         """Display a status update (can be overwritten)."""
         if not self.quiet:
-            if self.verbose:
+            if self.is_verbose:
                 print(f"⏳ {message}")
             else:
                 print(f"\r⏳ {message}", end='', flush=True)
@@ -187,4 +187,4 @@ class StatusReporter:
                 for error in metrics['errors'][:3]:  # Show first 3 errors
                     print(f"    • {error}")
                 if len(metrics['errors']) > 3:
-                    print(f"    • ... and {len(metrics['errors']) - 3} more") 
+                    print(f"    • ... and {len(metrics['errors']) - 3} more")

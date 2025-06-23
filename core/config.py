@@ -20,8 +20,8 @@ from .exceptions import ConfigError
 class LLMConfig:
     """Configuration for LLM provider."""
     provider: str = "ollama"
-    model: str = "llama3"
-    host: str = "http://localhost:11434"
+    model: str = "gemma3:12b"
+    host: str = "http://dso-wp-kasm2.sern.mil:11434"
     api_key: Optional[str] = None
     max_retries: int = 3
 
@@ -31,14 +31,14 @@ class EmbeddingConfig:
     """Configuration for embedding provider."""
     provider: str = "ollama"
     model: str = "nomic-embed-text"
-    host: str = "http://localhost:11434"
+    host: str = "http://dso-wp-kasm2.sern.mil:11434"
     api_key: Optional[str] = None
 
 
 @dataclass
 class MilvusConfig:
     """Configuration for Milvus database."""
-    uri: str = "localhost:19530"
+    uri: str = "tcp://eddge-sv-clarity.sern.mil:19530"
     collections: Dict[str, str] = None
     
     def __post_init__(self):
@@ -57,7 +57,7 @@ class CacheConfig:
     enabled: bool = True
     ttl: int = 3600
     max_size: int = 1000
-    directory: str = "~/.renode-generator/cache"
+    directory: str = "./.renode-generator/cache"
 
 
 @dataclass
@@ -110,7 +110,7 @@ class ConfigManager:
     """Manages configuration loading, validation, and creation."""
     
     def __init__(self):
-        self.default_config_dir = Path.home() / ".renode-generator"
+        self.default_config_dir = Path.home() / "Renode_CLI_Maker" / ".renode-generator"
         self.default_config_file = self.default_config_dir / "config.json"
         
     def get_default_config(self) -> Dict[str, Any]:

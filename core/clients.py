@@ -136,7 +136,8 @@ class MilvusClient:
             self.collections = {}
             for key, name in collection_names.items():
                 if not utility.has_collection(name):
-                    raise MilvusClientError(f"Milvus collection '{name}' not found on the server at {self.uri}.")
+                    print(f"Warning: Milvus collection '{name}' not found on the server at {self.uri}. Skipping this collection.")
+                    continue
                 self.collections[key] = Collection(name)
                 self.collections[key].load()
                 
@@ -195,11 +196,11 @@ class MilvusClient:
             
             # Perform the search
             collection = self.collections[collection_key]
-            search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
+            search_params = {"metric_type": "IP", "params": {"nprobe": 10}}
             
             results = collection.search(
                 data=[query_embedding],
-                anns_field="embedding",
+                anns_field="vector",
                 param=search_params,
                 limit=limit,
                 output_fields=["text"]
@@ -213,4 +214,4 @@ class MilvusClient:
             return documents
             
         except Exception as e:
-            raise MilvusClientError(f"Search failed in collection '{collection_key}': {e}") 
+            raise MilvusClientError(f"Search failed in collection '{collection_key}': {e}")

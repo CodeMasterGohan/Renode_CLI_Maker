@@ -1,0 +1,48 @@
+{
+  "llm": {
+    "provider": "ollama",
+    "model": "gemma3:12b",
+    "host": "http://dso-wp-kasm2.sern.mil:11434",
+    "api_key": null,
+    "max_retries": 3
+  },
+  "embedding": {
+    "provider": "ollama",
+    "model": "nomic-embed-text",
+    "host": "http://dso-wp-kasm2.sern.mil:11434",
+    "api_key": null
+  },
+  "milvus": {
+    "uri": "tcp://eddge-sv-clarity.sern.mil:19530",
+    "collections": {
+      "manual": "pacer_documents",
+      "examples": "pacer_renode_peripheral_examples",
+      "rf_examples": "robotframework_test_examples",
+      "rf_docs": "robotframework_documentation"
+    }
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "max_size": 1000,
+    "directory": "./.renode-generator/cache"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "console",
+    "file": null
+  },
+  "robotframework": {
+    "enabled": true,
+    "test_levels": [
+      "integration"
+    ],
+    "output_format": "robot",
+    "include_setup": true,
+    "include_teardown": true,
+    "keyword_library": "ReNodeKeywords",
+    "output_dir": "tests",
+    "suite_name": "ReNodePeripheralTests"
+  },
+  "mode": "peripheral"
+}
